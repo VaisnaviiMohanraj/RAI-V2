@@ -1,0 +1,17 @@
+{
+  "name": "rr-realty-ai-testing",
+  "version": "1.0.0",
+  "description": "Puppeteer testing scripts for RR Realty AI",
+  "main": "puppeteer-test.js",
+  "scripts": {
+    "test": "node puppeteer-test.js",
+    "test:headless": "node -e \"const Tester = require('./puppeteer-test'); (async () => { const t = new Tester(); await t.launch({headless: true}); await t.runFullTest(); await t.close(); })()\"",
+    "install-deps": "npm install puppeteer"
+  },
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  },
+  "keywords": ["puppeteer", "testing", "automation", "e2e"],
+  "author": "RR Realty AI Team",
+  "license": "MIT"
+}

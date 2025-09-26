@@ -1,0 +1,239 @@
+/* Document Card Styles */
+.document-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.document-card:hover {
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.document-card.compact {
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  min-height: 60px;
+}
+
+/* Document Header */
+.document-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.document-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-icon {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.file-icon.pdf-icon {
+  color: #dc2626;
+}
+
+.file-icon.doc-icon {
+  color: #2563eb;
+}
+
+.document-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.document-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.document-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+.file-size,
+.upload-date {
+  white-space: nowrap;
+}
+
+/* Document Actions */
+.document-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-button:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--color-text-primary);
+}
+
+.download-button:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.delete-button:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* Document Status */
+.document-status {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.status-indicator.processed .status-dot {
+  background: #10b981;
+  animation: none;
+}
+
+.status-indicator.processing .status-dot {
+  background: #f59e0b;
+}
+
+.status-indicator.error .status-dot {
+  background: #ef4444;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .document-card {
+    background: rgba(17, 24, 39, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .document-card:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+
+  .document-status {
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .action-button {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .action-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .document-card {
+    padding: 0.75rem;
+  }
+
+  .document-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .document-actions {
+    gap: 0.125rem;
+  }
+
+  .action-button {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+/* Animation Enhancements */
+.document-card {
+  transform-origin: center;
+}
+
+.document-card:active {
+  transform: scale(0.98);
+}
+
+/* Focus States */
+.action-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Loading State */
+.document-card.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.document-card.loading .status-dot {
+  animation: pulse-dot 1s ease-in-out infinite;
+}

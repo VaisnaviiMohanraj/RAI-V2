@@ -1,0 +1,28 @@
+{
+  "name": "rr-realty-ai-functions",
+  "version": "2.0.0",
+  "description": "Azure Functions for RR Realty AI conversation persistence and document processing",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "prestart": "npm run build",
+    "start": "func start",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.5.1",
+    "@azure/functions": "^4.8.0",
+    "@azure/storage-blob": "^12.28.0",
+    "axios": "^1.12.2"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.127",
+    "azure-functions-core-tools": "^4.0.6",
+    "typescript": "^5.9.2"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
