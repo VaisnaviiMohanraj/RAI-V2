@@ -1,12 +1,8 @@
 # Environment files - NEVER commit these
-.env
-.env.local
-.env.development
-.env.production
 *.env
 
 # Configuration files with sensitive data
-Backend/appsettings.Development.json
+Backend/appsettings.*.json
 
 # Backend - .NET
 Backend/bin/

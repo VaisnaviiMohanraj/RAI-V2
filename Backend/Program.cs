@@ -46,13 +46,11 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() 
-        ? CookieSecurePolicy.SameAsRequest 
-        : CookieSecurePolicy.Always; // Force HTTPS in production
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Force HTTPS in production
     options.Cookie.Name = "__RRRealty_Session";
 });
 
-// Configure CORS
+// Configure CORS for production
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -61,15 +59,6 @@ builder.Services.AddCors(options =>
                 "https://testing.rrrealty.ai", // Production domain
                 "https://site-net-rrai-blue-fsgabaardkdhhnhf.centralus-01.azurewebsites.net" // Azure Web App URL
               )
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
-    });
-    
-    // Add permissive CORS for development with credentials support
-    options.AddPolicy("DevelopmentCors", policy =>
-    {
-        policy.WithOrigins("http://localhost:3001", "http://localhost:3002", "http://127.0.0.1:54686")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -254,25 +243,18 @@ builder.Services.AddHttpClient();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 // CRITICAL: CORS must be applied BEFORE authentication
-// Use appropriate CORS policy based on environment
-app.UseCors(app.Environment.IsDevelopment() ? "DevelopmentCors" : "AllowFrontend");
+app.UseCors("AllowFrontend");
 
 // Enable static files and default files for SPA
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-// Enable HTTPS redirection in production only
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
+// Enable HTTPS redirection
+app.UseHttpsRedirection();
 
 // Add session middleware
 app.UseSession();
