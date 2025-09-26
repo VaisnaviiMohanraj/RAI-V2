@@ -4,7 +4,8 @@
   "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc && vite build --mode production"
+    "build": "tsc && vite build --mode production",
+    "start": "serve -s dist -l 8080"
   },
   "engines": {
     "node": ">=18.20.8",
@@ -22,7 +23,10 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.3",
+    "serve": "^14.2.1",
     "terser": "^5.44.0",
     "typescript": "^5.0.2",
     "vite": "^4.4.5"
