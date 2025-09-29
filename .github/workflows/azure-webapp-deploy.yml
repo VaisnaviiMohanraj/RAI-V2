@@ -7,7 +7,7 @@ on:
 
 env:
   APP_NAME: site-net
-  SLOT_NAME: rrai-blue
+  SLOT_NAME: rrai-stage
   DOTNET_VERSION: '9.0.x'
   NODE_VERSION: '18.x'
 
