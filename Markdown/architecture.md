@@ -18,6 +18,19 @@
 - **Storage**: Azure Storage Account for documents and conversation data
 - **Build System**: Azure Oryx handles compilation and runtime optimization, deploy through github
 
+### 🚨 CRITICAL DEPLOYMENT SAFETY
+**PRODUCTION PROTECTION - DO NOT DEPLOY TO PRODUCTION**
+- **Production App Service**: `site-net` (rg-innovation) - **NEVER DEPLOY HERE**
+- **Development Slot**: `site-net-rrai-blue` (deployment slot) - Safe for testing
+- **Production URL**: https://site-net-ajdhc8cngbgrfbhe.centralus-01.azurewebsites.net
+- **Development URL**: https://site-net-rrai-blue-fsgabaardkdhhnhf.centralus-01.azurewebsites.net
+
+**Deployment Rules:**
+1. ✅ **ALWAYS deploy to**: `site-net-rrai-blue` slot only
+2. ❌ **NEVER deploy to**: `site-net` production app
+3. 🔄 **Slot swapping**: Only after thorough testing and approval
+4. 📋 **GitHub Actions**: Configured to target `site-net-rrai-blue` slot only
+
 ## 📦 Technology Stack
 
 ### Frontend Dependencies

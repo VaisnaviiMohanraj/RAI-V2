@@ -6,7 +6,8 @@ on:
   workflow_dispatch:
 
 env:
-  APP_NAME: site-net-rrai-blue
+  APP_NAME: site-net
+  SLOT_NAME: rrai-blue
   DOTNET_VERSION: '9.0.x'
   NODE_VERSION: '18.x'
 
@@ -58,10 +59,11 @@ jobs:
           mkdir -p Backend/publish/wwwroot
           cp -R Frontend/dist/* Backend/publish/wwwroot/
 
-      - name: Deploy to Azure Web App using Publish Profile
+      - name: Deploy to Azure Web App Slot using Publish Profile
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.APP_NAME }}
+          slot-name: ${{ env.SLOT_NAME }}
           package: Backend/publish
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
 
