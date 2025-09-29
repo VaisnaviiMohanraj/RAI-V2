@@ -59,10 +59,31 @@ jobs:
 
       - name: Combine SPA into publish output (wwwroot)
         run: |
+          echo "🔍 Checking Frontend build output..."
+          ls -la Frontend/dist/ || echo "❌ Frontend/dist/ not found!"
+          
+          echo "📦 Creating wwwroot directory..."
           mkdir -p Backend/publish/wwwroot
-          cp -R Frontend/dist/* Backend/publish/wwwroot/
-          echo "Frontend assets combined into Backend/publish/wwwroot/"
+          
+          echo "🔗 Copying Frontend assets to wwwroot..."
+          if [ -d "Frontend/dist" ]; then
+            cp -R Frontend/dist/* Backend/publish/wwwroot/
+            echo "✅ Frontend assets copied successfully!"
+          else
+            echo "❌ Frontend/dist directory not found!"
+            exit 1
+          fi
+          
+          echo "🔍 Verifying wwwroot contents..."
           ls -la Backend/publish/wwwroot/
+          
+          echo "🔍 Checking for index.html..."
+          if [ -f "Backend/publish/wwwroot/index.html" ]; then
+            echo "✅ index.html found in wwwroot!"
+          else
+            echo "❌ index.html NOT found in wwwroot!"
+            exit 1
+          fi
 
       - name: Deploy to Azure Web App Slot using Publish Profile
         uses: azure/webapps-deploy@v3
