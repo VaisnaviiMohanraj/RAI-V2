@@ -35,6 +35,9 @@ jobs:
 
       - name: Build Frontend
         working-directory: Frontend
+        env:
+          VITE_FORCE_PRODUCTION_URL: 'true'
+          NODE_ENV: 'production'
         run: |
           npm ci
           npm run build
@@ -58,6 +61,8 @@ jobs:
         run: |
           mkdir -p Backend/publish/wwwroot
           cp -R Frontend/dist/* Backend/publish/wwwroot/
+          echo "Frontend assets combined into Backend/publish/wwwroot/"
+          ls -la Backend/publish/wwwroot/
 
       - name: Deploy to Azure Web App Slot using Publish Profile
         uses: azure/webapps-deploy@v3
