@@ -9,7 +9,7 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = "RequireDomainUser")]
+[Authorize(Policy = "RequireAuthenticatedUser")]
 public class DocumentController : ControllerBase
 {
     private readonly IDocumentService _documentService;

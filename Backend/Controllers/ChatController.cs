@@ -9,7 +9,7 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = "RequireDomainUser")]
+[Authorize(Policy = "RequireAuthenticatedUser")]
 public class ChatController : ControllerBase
 {
     private readonly IChatService _chatService;

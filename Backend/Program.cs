@@ -57,7 +57,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
                 "https://testing.rrrealty.ai", // Production domain
-                "https://site-net-rrai-blue-fsgabaardkdhhnhf.centralus-01.azurewebsites.net" // Azure Web App URL
+                "https://site-net-rrai-blue-fsgabaardkdhhnhf.centralus-01.azurewebsites.net", // Old Azure Web App URL
+                "https://site-net-rrai-stage-hhhhbzf4b2drcdc5.centralus-01.azurewebsites.net" // New rrai-stage slot URL
               )
               .AllowAnyHeader()
               .AllowAnyMethod()
