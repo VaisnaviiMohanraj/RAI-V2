@@ -46,7 +46,7 @@ const getRedirectUri = () => {
 
 const CLIENT_ID = env.VITE_AUTH_CLIENT_ID || "d4c452c4-5324-40ff-b43b-25f3daa2a45c";
 const AUTHORITY = env.VITE_AUTH_AUTHORITY || "https://login.microsoftonline.com/99848873-e61d-44cc-9862-d05151c567ab";
-const API_SCOPE = env.VITE_API_SCOPE || "User.Read";
+const API_SCOPE = env.VITE_API_SCOPE || `api://${CLIENT_ID}/access_as_user`;
 
 // MSAL configuration
 export const msalConfig: Configuration = {
