@@ -5,6 +5,7 @@ using Backend.Services.Document;
 using Backend.Services.Auth;
 using Backend.Services.Storage;
 using Backend.Configuration;
+using Backend.Authentication;
 using DotNetEnv;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
@@ -66,9 +67,10 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Configure Authentication - MSAL for all environments
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("EntraId"));
+// Configure Authentication - Use Easy Auth (Azure App Service Authentication)
+// Easy Auth handles JWT validation at the platform level, so we just need to read the headers
+builder.Services.AddAuthentication("EasyAuth")
+    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, EasyAuthAuthenticationHandler>("EasyAuth", options => { });
 
 // Configure authorization policies
 builder.Services.AddAuthorization(options =>
@@ -86,56 +88,6 @@ builder.Services.AddAuthorization(options =>
     
     // Add role-based policies if needed
     options.AddPolicy("RequireAdminRole", policy =>
-    {
-        policy.RequireRole("Admin");
-    });
-});
-
-// Configure MSAL options with environment variables
-// DISABLED: Using Azure App Service Easy Auth instead
-// builder.Services.PostConfigure<MicrosoftIdentityOptions>(options =>
-// {
-//     // Get values from environment variables first, then fall back to appsettings
-//     var tenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? Environment.GetEnvironmentVariable("ENTRAID_TENANTID");
-//     var clientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID") ?? Environment.GetEnvironmentVariable("ENTRAID_CLIENTID");
-//     var clientSecret = Environment.GetEnvironmentVariable("AZURE_CLIENT_SECRET") ?? Environment.GetEnvironmentVariable("ENTRAID_CLIENTSECRET");
-//     var domain = Environment.GetEnvironmentVariable("AZURE_DOMAIN") ?? Environment.GetEnvironmentVariable("ENTRAID_DOMAIN");
-//     
-//     Console.WriteLine($"Environment Variables - TenantId: {(string.IsNullOrEmpty(tenantId) ? "NOT SET" : "***SET***")}");
-//     Console.WriteLine($"Environment Variables - ClientId: {(string.IsNullOrEmpty(clientId) ? "NOT SET" : "***SET***")}");
-//     Console.WriteLine($"Environment Variables - ClientSecret: {(string.IsNullOrEmpty(clientSecret) ? "NOT SET" : "***SET***")}");
-//     Console.WriteLine($"Environment Variables - Domain: {(string.IsNullOrEmpty(domain) ? "NOT SET" : "***SET***")}");
-//     
-//     // Only override if environment variables are set, otherwise keep appsettings values
-//     if (!string.IsNullOrEmpty(tenantId))
-//     {
-//         options.TenantId = tenantId;
-//     }
-//     
-//     if (!string.IsNullOrEmpty(clientId))
-//     {
-//         options.ClientId = clientId;
-//     }
-//     
-//     if (!string.IsNullOrEmpty(clientSecret))
-//     {
-//         options.ClientSecret = clientSecret;
-//     }
-//     
-//     if (!string.IsNullOrEmpty(domain))
-//     {
-//         options.Domain = domain;
-//     }
-//     
-//     // Debug: Show final configuration (without exposing secrets)
-//     Console.WriteLine($"Final MSAL Config - TenantId: {(string.IsNullOrEmpty(options.TenantId) ? "NOT SET" : "***SET***")}");
-//     Console.WriteLine($"Final MSAL Config - ClientId: {(string.IsNullOrEmpty(options.ClientId) ? "NOT SET" : "***SET***")}");
-//     Console.WriteLine($"Final MSAL Config - ClientSecret: {(string.IsNullOrEmpty(options.ClientSecret) ? "NOT SET" : "***SET***")}");
-//     Console.WriteLine($"Final MSAL Config - Domain: {(string.IsNullOrEmpty(options.Domain) ? "NOT SET" : "***SET***")}");
-// });
-
-// Configure JWT Bearer options
-// DISABLED: Using Azure App Service Easy Auth instead
 // builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
 // {
 //     var tenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? Environment.GetEnvironmentVariable("ENTRAID_TENANTID");
@@ -157,14 +109,18 @@ builder.Services.Configure<OpenAISettings>(options =>
 {
     builder.Configuration.GetSection("OpenAI").Bind(options);
     
-    // Override with environment variables for security
-    var envApiKey = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
-    var envEndpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
-    // Prefer documented AZURE_OPENAI_DEPLOYMENT_NAME, fallback to AZURE_OPENAI_DEPLOYMENT
-    var envDeployment = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT_NAME")
-                        ?? Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT");
-    // Optional API version support per docs
-    var envApiVersion = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_VERSION");
+    // Use existing environment variables that are already deployed
+    var envApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? 
+                   Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
+    var envEndpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT") ?? 
+                     "https://gto4o.cognitiveservices.azure.com/"; // fallback
+    var envDeployment = Environment.GetEnvironmentVariable("OPENAI_DEPLOYMENT_NAME") ?? 
+                       Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT_NAME") ??
+                       Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT") ??
+                       "gpt-4o"; // fallback
+    var envApiVersion = Environment.GetEnvironmentVariable("OPENAI_API_VERSION") ?? 
+                       Environment.GetEnvironmentVariable("AZURE_OPENAI_API_VERSION") ??
+                       "2024-02-15-preview"; // fallback
     
     if (!string.IsNullOrEmpty(envApiKey))
     {
