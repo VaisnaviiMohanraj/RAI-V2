@@ -3,15 +3,6 @@ import { Configuration, PopupRequest } from "@azure/msal-browser";
 // Read Vite env vars for production; fallback to window origin for dev
 const env = import.meta.env;
 const getRedirectUri = () => {
-    // ALWAYS use production URL - no localhost in any deployed environment
-    const productionUrl = "https://testing.rrrealty.ai";
-    
-    // Force production URL if explicitly set via environment variable
-    if (env.VITE_FORCE_PRODUCTION_URL === 'true') {
-        console.log("MSAL using redirect URI (forced production):", productionUrl);
-        return productionUrl;
-    }
-    
     // Check multiple conditions to determine if we're in local development
     const isLocalDevelopment = typeof window !== "undefined" && 
                               window.location.origin.includes('localhost') && 
@@ -24,24 +15,13 @@ const getRedirectUri = () => {
     if (isLocalDevelopment) {
         const origin = window.location.origin;
         console.log("MSAL using redirect URI (local development):", origin);
-        console.log("Environment details:", {
-            DEV: env.DEV,
-            MODE: env.MODE,
-            NODE_ENV: env.NODE_ENV,
-            origin: origin
-        });
         return origin;
     }
     
-    // For ALL other cases (production builds, Azure deployment, etc.), use production URL
-    console.log("MSAL using redirect URI (production):", productionUrl);
-    console.log("Production environment details:", {
-        DEV: env.DEV,
-        MODE: env.MODE,
-        NODE_ENV: env.NODE_ENV,
-        origin: typeof window !== "undefined" ? window.location.origin : "server-side"
-    });
-    return productionUrl;
+    // For production/deployed builds, use the current window origin
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://www.rrrealty.ai";
+    console.log("MSAL using redirect URI (production):", origin);
+    return origin;
 };
 
 const CLIENT_ID = env.VITE_AUTH_CLIENT_ID || "d4c452c4-5324-40ff-b43b-25f3daa2a45c";

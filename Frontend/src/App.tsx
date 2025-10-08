@@ -30,40 +30,47 @@ function App() {
     
     const loadConversationSessions = async () => {
       try {
+        // First, try to load from localStorage
+        const storedSessions = localStorage.getItem('chatSessions');
+        if (storedSessions) {
+          const parsedSessions = JSON.parse(storedSessions);
+          setChatSessions(parsedSessions.map((s: any) => ({
+            ...s,
+            timestamp: new Date(s.timestamp)
+          })));
+          console.log('Loaded sessions from localStorage:', parsedSessions.length);
+        }
+        
+        // Try to fetch from backend (will fail gracefully if Azure Function is down)
         const sessions = await chatService.getConversationSessions();
-        // Ensure sessions is an array before calling map
-        if (Array.isArray(sessions)) {
+        if (Array.isArray(sessions) && sessions.length > 0) {
           const convertedSessions: ChatSession[] = sessions.map(session => ({
             id: session.id,
             title: session.title,
-            messages: [], // Will be loaded when selected
+            messages: [],
             timestamp: new Date(session.lastMessageTime),
             messageCount: session.messageCount
           }));
           setChatSessions(convertedSessions);
-          
-          // Try to restore currentChatId from localStorage
-          const savedChatId = localStorage.getItem('currentChatId');
-          if (savedChatId && sessions.some(s => s.id === savedChatId)) {
-            setCurrentChatId(savedChatId);
-          } else {
-            // On refresh, always start with welcome page (no messages loaded)
-            setMessages([]);
-            setCurrentChatId(null);
-            localStorage.removeItem('currentChatId');
-          }
+          localStorage.setItem('chatSessions', JSON.stringify(convertedSessions));
+          console.log('Loaded sessions from backend:', sessions.length);
+        }
+        
+        // Try to restore currentChatId from localStorage
+        const savedChatId = localStorage.getItem('currentChatId');
+        if (savedChatId) {
+          setCurrentChatId(savedChatId);
         } else {
-          console.warn('Sessions response is not an array:', sessions);
-          setChatSessions([]);
+          setMessages([]);
+          setCurrentChatId(null);
         }
       } catch (error) {
         console.error('Failed to load conversation sessions:', error);
-        setChatSessions([]);
+        // Don't clear sessions on error - keep whatever we have from localStorage
       }
     };
     
     loadConversationSessions();
-    // Don't load documents on app start - they'll be loaded when a conversation is selected
   }, [isAuthenticated]);
 
   // Load documents on app start or when conversation changes
@@ -125,35 +132,69 @@ function App() {
       console.log('Sending message with document IDs:', documentIds);
       console.log('Documents state:', documents);
 
-      const response = await chatService.sendMessage(content, conversationId || undefined, documentIds);
-      
+      // Create placeholder for streaming assistant message
+      const assistantMessageId = (Date.now() + 1).toString();
       const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: response.content,
+        id: assistantMessageId,
+        content: '', // Will be updated as chunks arrive
         isUser: false,
         sender: 'ai',
         timestamp: new Date(),
       };
-
+      
       setMessages(prev => [...prev, assistantMessage]);
+      setIsLoading(false); // Show streaming message instead of loading
+
+      let fullResponse = '';
+
+      // Use streaming endpoint
+      await chatService.sendStreamingMessage(
+        content,
+        documentIds,
+        conversationId || '',
+        (chunk: string) => {
+          fullResponse += chunk;
+          // Update the assistant message content with accumulated chunks
+          setMessages(prev => prev.map(msg => 
+            msg.id === assistantMessageId 
+              ? { ...msg, content: fullResponse }
+              : msg
+          ));
+        }
+      );
+
+      // Streaming complete - scroll to the assistant message
+      setTimeout(() => {
+        const assistantElement = document.querySelector(`[data-message-id="${assistantMessageId}"]`);
+        if (assistantElement) {
+          assistantElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+
+      const updatedMessages = [...messages, userMessage, { ...assistantMessage, content: fullResponse }];
+
+      // Save messages to localStorage for this conversation
+      if (conversationId) {
+        localStorage.setItem(`chat_${conversationId}`, JSON.stringify(updatedMessages));
+        console.log('Saved chat messages to localStorage:', conversationId);
+      }
 
       // Update chat sessions
       if (!isExistingChat) {
-        // Only refresh from backend for new conversations
-        console.log('Refreshing sessions from backend for new conversation');
-        const sessions = await chatService.getConversationSessions();
-        if (Array.isArray(sessions)) {
-          const convertedSessions: ChatSession[] = sessions.map(session => ({
-            id: session.id,
-            title: session.title,
-            messages: [],
-            timestamp: new Date(session.lastMessageTime),
-            messageCount: session.messageCount
-          }));
-          setChatSessions(convertedSessions);
-        } else {
-          console.warn('Sessions response is not an array during refresh:', sessions);
-        }
+        // Create a new local session for the sidebar
+        console.log('Creating new local session for conversation');
+        const newSession: ChatSession = {
+          id: conversationId!,
+          title: content.length > 50 ? content.substring(0, 50) + '...' : content,
+          messages: [],
+          timestamp: new Date(),
+          messageCount: 2 // User + assistant
+        };
+        setChatSessions(prev => {
+          const updated = [newSession, ...prev];
+          localStorage.setItem('chatSessions', JSON.stringify(updated));
+          return updated;
+        });
       } else {
         // For existing chats, update locally without backend refresh
         console.log('Updating existing chat locally');
@@ -172,12 +213,15 @@ function App() {
           // Move the updated session to the top
           const updatedSession = updated.find(s => s.id === currentChatId);
           const otherSessions = updated.filter(s => s.id !== currentChatId);
-          return updatedSession ? [updatedSession, ...otherSessions] : updated;
+          const final = updatedSession ? [updatedSession, ...otherSessions] : updated;
+          localStorage.setItem('chatSessions', JSON.stringify(final));
+          return final;
         });
       }
     } catch (error) {
       console.error('Failed to send message:', error);
-      setMessages(prev => prev.slice(0, -1)); // Remove user message on error
+      setMessages(prev => prev.slice(0, -2)); // Remove both user and empty assistant message on error
+      alert('Failed to send message. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -193,28 +237,51 @@ function App() {
     try {
       setIsLoading(true);
       
-      // Find the session from backend data to get the real session ID
-      const sessions = await chatService.getConversationSessions();
-      if (!Array.isArray(sessions)) {
-        console.warn('Sessions response is not an array in handleSelectChat:', sessions);
+      // Find the session from local state first (since we store in localStorage)
+      const localSession = chatSessions.find(session => session.id === chatId);
+      
+      if (!localSession) {
+        console.warn('Session not found in local state:', chatId);
         return;
       }
-      const selectedSession = sessions.find(session => session.id === chatId);
       
-      if (selectedSession) {
-        const history = await chatService.getConversationHistoryBySession(selectedSession.id);
+      // Try to load history from backend
+      try {
+        const history = await chatService.getConversationHistoryBySession(chatId);
         
-        const convertedMessages: Message[] = history.map((entry, index) => ({
-          id: `${selectedSession.id}-${index}`,
-          content: entry.content,
-          isUser: entry.role === 'user',
-          sender: entry.role === 'user' ? 'user' : 'ai',
-          timestamp: new Date()
-        }));
-        
-        setMessages(convertedMessages);
-        setCurrentChatId(selectedSession.id); // Use the actual backend session ID
-        // Documents will be loaded automatically by the useEffect when currentChatId changes
+        if (history && history.length > 0) {
+          const convertedMessages: Message[] = history.map((entry, index) => ({
+            id: `${chatId}-${index}`,
+            content: entry.content,
+            isUser: entry.role === 'user',
+            sender: entry.role === 'user' ? 'user' : 'ai',
+            timestamp: new Date()
+          }));
+          
+          setMessages(convertedMessages);
+          setCurrentChatId(chatId);
+          console.log('Loaded chat history from backend:', convertedMessages.length, 'messages');
+          return;
+        }
+      } catch (error) {
+        console.warn('Backend history unavailable, using localStorage:', error);
+      }
+      
+      // Fallback: Try to load from localStorage
+      const savedMessages = localStorage.getItem(`chat_${chatId}`);
+      if (savedMessages) {
+        const parsedMessages = JSON.parse(savedMessages);
+        setMessages(parsedMessages.map((m: any) => ({
+          ...m,
+          timestamp: new Date(m.timestamp)
+        })));
+        setCurrentChatId(chatId);
+        console.log('Loaded chat history from localStorage:', parsedMessages.length, 'messages');
+      } else {
+        // If no history found anywhere, at least switch to this chat
+        setMessages([]);
+        setCurrentChatId(chatId);
+        console.log('No history found for chat, starting fresh');
       }
     } catch (error) {
       console.error('Failed to load chat session:', error);
@@ -225,30 +292,25 @@ function App() {
 
   const handleDeleteChat = async (sessionId: string) => {
     try {
-      await chatService.deleteConversationSession(sessionId);
+      // Try to delete from backend (best effort)
+      try {
+        await chatService.deleteConversationSession(sessionId);
+      } catch (backendError) {
+        console.warn('Backend delete failed, continuing with local delete:', backendError);
+      }
       
-      // Remove from local state
-      setChatSessions(prev => prev.filter(session => session.id !== sessionId));
+      // Remove from local state and localStorage
+      setChatSessions(prev => {
+        const updated = prev.filter(session => session.id !== sessionId);
+        localStorage.setItem('chatSessions', JSON.stringify(updated));
+        return updated;
+      });
       
       // If this was the current chat, clear it
       if (currentChatId === sessionId) {
         setMessages([]);
         setCurrentChatId(null);
-      }
-      
-      // Refresh sessions from backend to ensure consistency
-      const sessions = await chatService.getConversationSessions();
-      if (Array.isArray(sessions)) {
-        const convertedSessions: ChatSession[] = sessions.map(session => ({
-          id: session.id,
-          title: session.title,
-          messages: [],
-          timestamp: new Date(session.lastMessageTime),
-          messageCount: session.messageCount
-        }));
-        setChatSessions(convertedSessions);
-      } else {
-        console.warn('Sessions response is not an array in handleDeleteChat:', sessions);
+        localStorage.removeItem('currentChatId');
       }
     } catch (error) {
       console.error('Failed to delete conversation:', error);

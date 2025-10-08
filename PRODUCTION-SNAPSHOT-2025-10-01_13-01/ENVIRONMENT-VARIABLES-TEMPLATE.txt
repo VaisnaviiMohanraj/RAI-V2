@@ -1,0 +1,42 @@
+﻿# RR Realty AI - Environment Variables Template
+# Version 1.0
+
+# ============================================
+# App Service (site-net, rrai-test slot)
+# ============================================
+
+OPENAI_ENDPOINT=https://gto4o.openai.azure.com/
+OPENAI_API_KEY=<INSERT_API_KEY>
+OPENAI_DEPLOYMENT_NAME=gpt-4o
+OPENAI_API_VERSION=2024-10-21
+
+AZURE_FUNCTION_URL=https://fn-conversationsave.azurewebsites.net/api/conversations/update?code=<INSERT_CODE>
+
+# Azure AD Authentication
+TenantId=99848873-e61d-44cc-9862-d05151c567ab
+ClientId=d4c452c4-5324-40ff-b43b-25f3daa2a45c
+
+# ============================================
+# Azure Function (fn-conversationsave)
+# ============================================
+
+SQL_USER=CloudSA9437652b
+SQL_PASSWORD=<INSERT_PASSWORD>
+SQL_SERVER=rts-sql-main.database.windows.net
+SQL_DATABASE=rts-sql-main
+
+# ============================================
+# CORS Configuration (in Program.cs)
+# ============================================
+
+# Allowed Origins:
+# - https://testing.rrrealty.ai
+# - https://site-net-rrai-test-ambjbdbvdwcffhat.centralus-01.azurewebsites.net
+
+# ============================================
+# Notes
+# ============================================
+# 1. Replace <INSERT_*> placeholders with actual values
+# 2. Never commit sensitive values to source control
+# 3. Use Azure Key Vault in production
+# 4. Verify CORS origins match deployment URL

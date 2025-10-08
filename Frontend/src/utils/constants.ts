@@ -63,7 +63,6 @@ export const ERROR_MESSAGES = {
   AUTHENTICATION_ERROR: 'Authentication failed. Please log in again.',
   FILE_TOO_LARGE: `File size exceeds ${FILE_CONFIG.MAX_SIZE_MB}MB limit.`,
   INVALID_FILE_TYPE: 'Invalid file type. Please upload PDF, Word, or text files only.',
-  UPLOAD_FAILED: 'Failed to upload file. Please try again.',
   CHAT_ERROR: 'Failed to send message. Please try again.',
   SESSION_ERROR: 'Failed to load chat session. Please refresh the page.',
   GENERIC_ERROR: 'Something went wrong. Please try again.',
@@ -88,7 +87,7 @@ export const FEATURES = {
 
 // Real Estate Context
 export const REAL_ESTATE_CONTEXT = {
-  SYSTEM_PROMPT: `You are RR Realty AI, an expert real estate assistant with deep knowledge of:
+  SYSTEM_PROMPT: `You are R&R Realty AI, an expert real estate assistant with deep knowledge of:
 - Property analysis and valuation
 - Market trends and investment strategies
 - Real estate law and regulations

@@ -4,7 +4,7 @@ namespace Backend.Services.Chat;
 
 public interface IAzureFunctionService
 {
-    Task<bool> SaveConversationAsync(string userId, string userMessage, string assistantResponse, string? conversationId = null);
+    Task<(bool success, string? functionConversationId)> SaveConversationAsync(string userId, List<ChatMessage> conversationHistory, string? conversationId = null, string? userEmail = null);
     Task<List<ConversationEntry>> GetConversationHistoryAsync(string userId, string? conversationId = null);
     Task<List<ConversationSession>> GetAllConversationSessionsAsync(string userId);
     Task<bool> ClearConversationHistoryAsync(string userId);

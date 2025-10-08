@@ -44,19 +44,23 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ isOpen, onClose, onUplo
   };
 
   const validateFile = (file: File): string | null => {
-    const allowedTypes = [
+    const allowedMimeTypes = [
       'application/pdf',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ];
-    
-    if (!allowedTypes.includes(file.type)) {
+    const allowedExtensions = ['.pdf', '.docx'];
+    const fileName = file.name?.toLowerCase() ?? '';
+    const hasAllowedExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+    const hasAllowedMimeType = file.type ? allowedMimeTypes.includes(file.type) : false;
+
+    if (!(hasAllowedMimeType || hasAllowedExtension)) {
       return 'Only PDF and DOCX files are supported';
     }
-    
+
     if (file.size > 10 * 1024 * 1024) { // 10MB limit
       return 'File size must be less than 10MB';
     }
-    
+
     return null;
   };
 

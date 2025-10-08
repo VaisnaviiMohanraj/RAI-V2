@@ -46,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h2 className="sidebar-title">RR Realty AI</h2>
+        <h2 className="sidebar-title">R&R Realty AI</h2>
       </div>
 
       <div className="sidebar-content">

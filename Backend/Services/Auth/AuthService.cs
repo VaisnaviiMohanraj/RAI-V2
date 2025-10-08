@@ -29,7 +29,12 @@ public class AuthService : IAuthService
 
     public string GetUserIdFromClaims(ClaimsPrincipal user)
     {
-        return user.GetObjectId() ?? string.Empty;
+        // For anonymous users (AllowAnonymous endpoints), return "anonymous"
+        if (user?.Identity?.IsAuthenticated != true)
+        {
+            return "anonymous";
+        }
+        return user.GetObjectId() ?? "anonymous";
     }
 
     public string GetUserEmailFromClaims(ClaimsPrincipal user)

@@ -58,7 +58,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            <h1>RR Realty AI</h1>
+            <h1>R&R Realty AI</h1>
             <p>Sign in to access your AI assistant</p>
           </div>
           

@@ -58,6 +58,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isLoading }) => {
           {messages.map((message, index) => (
             <motion.div
               key={message.id}
+              data-message-id={message.id}
               className={`message ${message.isUser ? 'message-user' : 'message-ai'}`}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}

@@ -70,13 +70,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <div className="welcome-icon">
                 <img 
                   src="/images/RAIlogo.png" 
-                  alt="RR Realty AI Logo" 
+                  alt="R&R Realty AI Logo" 
                   className="rr-logo-image"
                   width="80"
                   height="80"
                 />
               </div>
-              <h2 className="welcome-title">Welcome to RR Realty AI</h2>
+              <h2 className="welcome-title">Welcome to R&R Realty AI</h2>
               <p className="welcome-description">
                 I'm your intelligent assistant, ready to help with any questions or tasks.
                 Start a conversation by typing a message below.

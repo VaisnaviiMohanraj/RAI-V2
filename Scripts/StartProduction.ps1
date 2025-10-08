@@ -25,7 +25,7 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd 'c:\Build\RAI 
 
 Write-Host "`n=== Production Testing Setup Complete ===" -ForegroundColor Green
 Write-Host "Backend: https://site-net-rrai-blue-fsgabaardkdhhnhf.centralus-01.azurewebsites.net" -ForegroundColor White
-Write-Host "Frontend: https://testing.rrrealty.ai" -ForegroundColor White
+Write-Host "Frontend: https://www.rrrealty.ai" -ForegroundColor White
 Write-Host "Swagger: https://site-net-rrai-blue-fsgabaardkdhhnhf.centralus-01.azurewebsites.net/swagger" -ForegroundColor White
 Write-Host "`nAuthentication: Microsoft Identity (MSAL)" -ForegroundColor Yellow
 Write-Host "Environment: Production" -ForegroundColor Yellow

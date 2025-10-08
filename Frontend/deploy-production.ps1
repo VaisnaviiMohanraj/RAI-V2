@@ -23,4 +23,4 @@ npm run build
 
 Write-Host "Production build completed!" -ForegroundColor Green
 Write-Host "Build output is in the 'dist' directory" -ForegroundColor Cyan
-Write-Host "The app is configured to use production URL: https://testing.rrrealty.ai" -ForegroundColor Cyan
+Write-Host "The app is configured to use production URL: https://www.rrrealty.ai" -ForegroundColor Cyan

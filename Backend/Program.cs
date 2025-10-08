@@ -5,7 +5,7 @@ using Backend.Services.Document;
 using Backend.Services.Auth;
 using Backend.Services.Storage;
 using Backend.Configuration;
-using Backend.Authentication;
+// using Backend.Authentication; // Removed custom auth handler
 using DotNetEnv;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
@@ -22,6 +22,7 @@ catch (FileNotFoundException)
 }
 
 var builder = WebApplication.CreateBuilder(args);
+
 
 // Configure Azure Key Vault for production
 if (!builder.Environment.IsDevelopment())
@@ -57,9 +58,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-                "https://testing.rrrealty.ai", // Production domain
-                "https://site-net-rrai-blue-fsgabaardkdhhnhf.centralus-01.azurewebsites.net", // Old Azure Web App URL
-                "https://site-net-rrai-stage-hhhhbzf4b2drcdc5.centralus-01.azurewebsites.net" // New rrai-stage slot URL
+                "https://www.rrrealty.ai" // Production domain
               )
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -67,10 +66,20 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Configure Authentication - Use Easy Auth (Azure App Service Authentication)
-// Easy Auth handles JWT validation at the platform level, so we just need to read the headers
-builder.Services.AddAuthentication("EasyAuth")
-    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, EasyAuthAuthenticationHandler>("EasyAuth", options => { });
+// Configure Authentication - MSAL for all environments
+try
+{
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("EntraId"));
+    Console.WriteLine("Authentication configured successfully");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Warning: Authentication configuration failed: {ex.Message}");
+    // Add basic authentication without Microsoft Identity to allow app to start
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer();
+}
 
 // Configure authorization policies
 builder.Services.AddAuthorization(options =>
@@ -88,21 +97,11 @@ builder.Services.AddAuthorization(options =>
     
     // Add role-based policies if needed
     options.AddPolicy("RequireAdminRole", policy =>
-// builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
-// {
-//     var tenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? Environment.GetEnvironmentVariable("ENTRAID_TENANTID");
-//     var clientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID") ?? Environment.GetEnvironmentVariable("ENTRAID_CLIENTID");
-//     
-//     if (!string.IsNullOrEmpty(tenantId))
-//     {
-//         options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
-//     }
-//     
-//     if (!string.IsNullOrEmpty(clientId))
-//     {
-//         options.Audience = clientId;
-//     }
-// });
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireRole("Admin");
+    });
+});
 
 // Configure OpenAI settings
 builder.Services.Configure<OpenAISettings>(options =>
@@ -110,17 +109,19 @@ builder.Services.Configure<OpenAISettings>(options =>
     builder.Configuration.GetSection("OpenAI").Bind(options);
     
     // Use existing environment variables that are already deployed
+    // Check production naming convention first (OPENAI_*), then Azure naming (AZURE_OPENAI_*)
     var envApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? 
                    Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
-    var envEndpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT") ?? 
-                     "https://gto4o.cognitiveservices.azure.com/"; // fallback
+    var envEndpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT") ?? 
+                     Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT") ?? 
+                     "https://gto4o.openai.azure.com/"; // fallback
     var envDeployment = Environment.GetEnvironmentVariable("OPENAI_DEPLOYMENT_NAME") ?? 
                        Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT_NAME") ??
                        Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT") ??
                        "gpt-4o"; // fallback
     var envApiVersion = Environment.GetEnvironmentVariable("OPENAI_API_VERSION") ?? 
                        Environment.GetEnvironmentVariable("AZURE_OPENAI_API_VERSION") ??
-                       "2024-02-15-preview"; // fallback
+                       "2024-10-21"; // fallback updated to match production
     
     if (!string.IsNullOrEmpty(envApiKey))
     {
@@ -173,11 +174,19 @@ builder.Services.Configure<OpenAISettings>(options =>
 try
 {
     // Register services with no dependencies first
-    builder.Services.AddSingleton<IDocumentService, DocumentService>();
-    builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IFileValidationService, FileValidationService>();
-    builder.Services.AddScoped<IAzureFunctionService, AzureFunctionService>();
+    builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IStorageService, AzureStorageService>();
+    
+    // Register DocumentService as Scoped (was Singleton but depends on Scoped IFileValidationService)
+    builder.Services.AddScoped<IDocumentService, DocumentService>();
+    
+    // Register HttpClient for AzureFunctionService with timeout
+    builder.Services.AddHttpClient<IAzureFunctionService, AzureFunctionService>()
+        .ConfigureHttpClient(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30); // Prevent hanging on cold starts
+        });
     
     // Register chat-related services
     builder.Services.AddScoped<IConversationManager, ConversationManager>();
@@ -191,8 +200,7 @@ try
 catch (Exception ex)
 {
     Console.WriteLine($"Error registering services: {ex.Message}");
-    // Register minimal services to allow app to start
-    builder.Services.AddSingleton<IDocumentService, DocumentService>();
+    throw; // Re-throw to prevent app from starting with broken services
 }
 
 builder.Services.AddHttpClient();
@@ -207,6 +215,7 @@ app.UseSwaggerUI();
 app.UseCors("AllowFrontend");
 
 // Enable static files and default files for SPA
+// Frontend files are deployed at root alongside Backend.dll
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
@@ -216,7 +225,7 @@ app.UseHttpsRedirection();
 // Add session middleware
 app.UseSession();
 
-// Re-enable authentication for production deployment
+// Re-enable authentication for production
 app.UseAuthentication();
 app.UseAuthorization();
 

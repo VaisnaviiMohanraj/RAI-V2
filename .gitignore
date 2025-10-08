@@ -87,3 +87,11 @@ node_modules/
 # temporary files
 *.tmp
 *.temp
+
+# Publish artifacts and deployment packages
+Backend/publish/
+publish/
+*.zip
+*Deployment.zip
+rr-realty-ai-*.zip
+Backend/rr-realty-ai-deployment.zip
