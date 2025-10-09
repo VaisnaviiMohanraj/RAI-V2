@@ -37,8 +37,14 @@ export const msalConfig: Configuration = {
         postLogoutRedirectUri: getRedirectUri(),
     },
     cache: {
-        cacheLocation: "sessionStorage",
-        storeAuthStateInCookie: false,
+        cacheLocation: "localStorage",
+        storeAuthStateInCookie: true,
+    },
+    system: {
+        allowRedirectInIframe: false,
+        windowHashTimeout: 9000,
+        iframeHashTimeout: 9000,
+        loadFrameTimeout: 9000,
     },
 };
 

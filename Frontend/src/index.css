@@ -22,6 +22,28 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Mobile touch optimizations */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+button, a, [role="button"] {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Fix Android viewport height issues */
+html {
+  height: -webkit-fill-available;
+}
+
 /* CSS Custom Properties - Brand Color System */
 :root {
   /* Brand Colors */

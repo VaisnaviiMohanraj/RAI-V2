@@ -5,6 +5,7 @@ import ChatInterface from './components/Chat/ChatInterface';
 import Sidebar from './components/UI/Sidebar';
 import { documentService } from './services/documentService';
 import { chatService } from './services/chatService';
+import { StorageManager } from './utils/storageManager';
 import type { Message, Document as AppDocument } from './types';
 import './App.css';
 
@@ -30,6 +31,17 @@ function App() {
     
     const loadConversationSessions = async () => {
       try {
+        // Check storage availability and quota
+        if (!StorageManager.isAvailable()) {
+          console.warn('localStorage not available (private mode?)');
+        } else {
+          const quota = await StorageManager.checkQuota();
+          if (!quota.available) {
+            console.warn('Storage quota low, cleaning up old sessions...');
+            StorageManager.clearOldSessions(10);
+          }
+        }
+
         // First, try to load from localStorage
         const storedSessions = localStorage.getItem('chatSessions');
         if (storedSessions) {
@@ -52,7 +64,7 @@ function App() {
             messageCount: session.messageCount
           }));
           setChatSessions(convertedSessions);
-          localStorage.setItem('chatSessions', JSON.stringify(convertedSessions));
+          StorageManager.safeSetItem('chatSessions', JSON.stringify(convertedSessions));
           console.log('Loaded sessions from backend:', sessions.length);
         }
         

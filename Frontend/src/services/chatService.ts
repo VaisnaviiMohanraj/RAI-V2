@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { ChatRequest, ChatResponse, ConversationSession } from '../types';
 import { authService } from './authService';
+import { NetworkManager } from '../utils/networkManager';
+import { StorageManager } from '../utils/storageManager';
 
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 
@@ -45,7 +47,11 @@ class ChatService {
 
   private saveConversationToLocalStorage(): void {
     try {
-      localStorage.setItem('conversationHistory', JSON.stringify(this.conversationHistory));
+      const data = JSON.stringify(this.conversationHistory);
+      const saved = StorageManager.safeSetItem('conversationHistory', data);
+      if (!saved) {
+        console.warn('Failed to save conversation - storage quota exceeded');
+      }
     } catch (error) {
       console.error('Failed to save conversation to localStorage:', error);
     }
@@ -128,22 +134,38 @@ class ChatService {
   }
 
   async sendStreamingMessage(message: string, documentIds: string[], conversationId: string, onChunk: (chunk: string) => void): Promise<void> {
+    // Check if browser supports ReadableStream properly (Android compatibility)
+    const supportsStreaming = typeof ReadableStream !== 'undefined' && 
+                             'getReader' in ReadableStream.prototype;
+    
+    if (!supportsStreaming) {
+      console.warn('Browser does not support streaming, using fallback');
+      // Fallback to regular message for older Android browsers
+      const response = await this.sendMessage(message, conversationId, documentIds);
+      onChunk(response.content);
+      return;
+    }
+
     try {
       const authHeaders = await this.getAuthHeaders();
-      const response = await fetch(`${API_BASE_URL}/chat/stream`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          message: message,
-          userId: 'user-1',
-          documentIds: documentIds,
-          conversationId: conversationId
-        }),
-      });
+      
+      // Use NetworkManager retry for mobile reliability
+      const response = await NetworkManager.retryFetch(async () => {
+        return await fetch(`${API_BASE_URL}/chat/stream`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            message: message,
+            userId: 'user-1',
+            documentIds: documentIds,
+            conversationId: conversationId
+          }),
+        });
+      }, 2, 1000); // 2 retries with 1s initial delay
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
